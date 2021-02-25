@@ -38,8 +38,6 @@ def kalman(data):
 	gy = data.angular_velocity.y
 	gz = data.angular_velocity.z
 
-	# rospy.loginfo("I heard %s", gx)
-
 	G = np.array([[gx], [gy], [gz]], np.float64)
 	G_meas = np.subtract(G, b) # G = G_true + epsilon, where epsilon is the gyroscope noise
 	H = np.multiply(2.0,np.add(np.transpose(G_meas), np.multiply(-1.0, np.transpose(b))))
@@ -59,21 +57,12 @@ def kalman(data):
 	#print("bias : [ ", b[0][0]," , ",b[1][0]," , ",b[2][0]," ]")
 	return
 
-
-
-#def listener():
-	#rospy.init_node('listener', anonymous=True)
-	#rospy.Subscriber("/imu0", Imu, kalman)
-
-	#rospy.spin()
-
 class point:
 	x = 0
 	y = 0
 	z = 0
 
 class data:
-	'''This is a docstring. I have created a new class'''
 	def __init__(self):
 		self.angular_velocity = point()
 
@@ -108,9 +97,9 @@ if __name__ == '__main__':
 	I = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]], np.float64) #matrix([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
 	count = 0
-
-	gyro_mat = io.loadmat('/home/diarmaid/Documents/Dev/zeis/filter/captures/capture_dlps_off_8kHz_IMU_A_pole_sway_z_pos_y_pos_z_pos_first_11500_samples_removed_gyro_x_y_z.mat')
-	#gyro_mat = io.loadmat('/home/diarmaid/Documents/Dev/zeis/filter/captures/capture_dlps_off_8kHz_IMU_A_stil_80s_first_11500_samples_removed_gyro_x_y_z.mat')
+	
+	# Point this to a matlab *.mat file array of three columns. Each column is the x, y and z velocity values from the gyroscope
+	gyro_mat = io.loadmat('captures/capture_dlps_off_8kHz_IMU_A_pole_sway_z_pos_y_pos_z_pos_first_11500_samples_removed_gyro_x_y_z.mat')
 	data = data()
 	for samp_num in range(gyro_mat['gyro_velocities'].shape[0]):
 		data.angular_velocity.x = gyro_mat['gyro_velocities'][samp_num, 0]
@@ -119,4 +108,3 @@ if __name__ == '__main__':
 		kalman(data)
 
 	print("Done!")
-	#listener()
