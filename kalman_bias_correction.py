@@ -1,8 +1,9 @@
-import rospy
-from sensor_msgs.msg import Imu
+#import rospy
+#from sensor_msgs.msg import Imu
 from math import *
 import numpy as np 
 import matplotlib.pyplot as plt
+import scipy.io as io
 
 
 def kalman(data):
@@ -19,9 +20,10 @@ def kalman(data):
 	global g_correct
 
 	if count < count_min:
+		count += 1
 		return
 	
-	if count > count_max :	
+	if count > count_max -1:
 		g_correct = g - np.transpose(b)
 		plt.subplot(121)
 		plt.hist(g, bins='auto')
@@ -30,7 +32,7 @@ def kalman(data):
 		plt.hist(g_correct, bins='auto')
 		plt.title('Corrected data')
 		plt.suptitle('Kalman Correction')
-		plot.show()
+		plt.show()
 		
 	gx = data.angular_velocity.x
 	gy = data.angular_velocity.y
@@ -51,19 +53,30 @@ def kalman(data):
 	b = b + np.matmul(K,Y)
 	P = np.matmul((I - np.matmul(K,H)),P)
 
-	g[count - count_min] = G 
+	g[count - count_min, :] = np.transpose(G)
 	count+=1
 
-	print("bias : [ ", b[0][0]," , ",b[1][0]," , ",b[2][0]," ]")
+	#print("bias : [ ", b[0][0]," , ",b[1][0]," , ",b[2][0]," ]")
 	return
 
 
 
-def listener():
-	rospy.init_node('listener', anonymous=True)
-	rospy.Subscriber("/imu0", Imu, kalman)
+#def listener():
+	#rospy.init_node('listener', anonymous=True)
+	#rospy.Subscriber("/imu0", Imu, kalman)
 
-	rospy.spin()
+	#rospy.spin()
+
+class point:
+	x = 0
+	y = 0
+	z = 0
+
+class data:
+	'''This is a docstring. I have created a new class'''
+	def __init__(self):
+		self.angular_velocity = point()
+
 
 if __name__ == '__main__':
 	global b
@@ -78,9 +91,12 @@ if __name__ == '__main__':
 	global g
 	global g_correct
 
-	hz = 2
-	time_start = 25
-	time_end = 45 #seconds
+	# hz = 2
+	hz = 8000
+	#time_start = 25
+	time_start = 1
+	#time_end = 45 #seconds
+	time_end = 4 #seconds
 	count_min = hz * time_start
 	count_max = hz * time_end
 	size = count_max - count_min	
@@ -93,4 +109,14 @@ if __name__ == '__main__':
 
 	count = 0
 
-	listener()	
+	gyro_mat = io.loadmat('/home/diarmaid/Documents/Dev/zeis/filter/captures/capture_dlps_off_8kHz_IMU_A_pole_sway_z_pos_y_pos_z_pos_first_11500_samples_removed_gyro_x_y_z.mat')
+	#gyro_mat = io.loadmat('/home/diarmaid/Documents/Dev/zeis/filter/captures/capture_dlps_off_8kHz_IMU_A_stil_80s_first_11500_samples_removed_gyro_x_y_z.mat')
+	data = data()
+	for samp_num in range(gyro_mat['gyro_velocities'].shape[0]):
+		data.angular_velocity.x = gyro_mat['gyro_velocities'][samp_num, 0]
+		data.angular_velocity.y = gyro_mat['gyro_velocities'][samp_num, 1]
+		data.angular_velocity.z = gyro_mat['gyro_velocities'][samp_num, 2]
+		kalman(data)
+
+	print("Done!")
+	#listener()
